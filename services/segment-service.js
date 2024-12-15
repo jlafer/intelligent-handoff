@@ -31,7 +31,6 @@ function upsertUser({ userId, anonymousId, traits }) {
     if (!userId && !anonymousId) {
       throw new Error('Either `userId` or `anonymousId` must be provided.');
     }
-
     analytics.identify({ userId, anonymousId, traits });
   } catch (error) {
     console.error('Error adding user:', error);
@@ -56,7 +55,6 @@ function addEvent({ userId, anonymousId, event, properties }) {
     if (!userId && !anonymousId) {
       throw new Error('Either `userId` or `anonymousId` must be provided.');
     }
-
     analytics.track({ userId, anonymousId, event, properties });
   } catch (error) {
     console.error('Error adding event:', error);
@@ -84,7 +82,6 @@ async function getProfileTraits(userId) {
       console.log('getProfileTraits: ', traits);
       return traits;
     }
-
     return null;
   } catch (error) {
     if (error.response.status === 404) {
@@ -92,7 +89,6 @@ async function getProfileTraits(userId) {
     } else {
       console.error('Error Occurred - :', error);
     }
-
     return null;
   }
 }

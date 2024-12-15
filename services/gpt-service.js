@@ -21,14 +21,19 @@ class GptService extends EventEmitter {
     this.openai = new OpenAI();
     this.model = model;
     console.log(`GptService initialized with model: ${model}`);
-    this.userContext = [
-      {
-        'role': 'assistant',
-        'content': 'Hello! Welcome to Owl Shoes, how can i help you today'
-      }
-    ],
+    this.userContext = [];
     this.partialResponseIndex = 0;
     this.isInterrupted = false;
+  }
+
+  initUserContext(cfg) {
+    this.userContext.push({ 'role': 'assistant', 'content': 'Hello! Welcome to Owl Shoes, how can i help you today' });
+    this.userContext.push({ 'role': 'system', 'content': cfg.sys_prompt });
+    this.userContext.push({ 'role': 'system', 'content': cfg.profile });
+    this.userContext.push({ 'role': 'system', 'content': cfg.orders });
+    this.userContext.push({ 'role': 'system', 'content': cfg.inventory });
+    this.userContext.push({ 'role': 'system', 'content': cfg.example });
+    this.userContext.push({ 'role': 'system', 'content': `You can speak in many languages, but use default language ${cfg.language} for this conversation from now on! Remember it as the default language, even if you change language in between. Treat en-US and en-GB etc. as different languages.` });
   }
 
   // add the callSid to the chat context in case ChatGPT decides to transfer the call
