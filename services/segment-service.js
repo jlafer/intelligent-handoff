@@ -1,5 +1,6 @@
 const { Analytics } = require('@segment/analytics-node');
 const axios = require('axios');
+const e = require('express');
 require('dotenv').config();
 
 const profileToken = process.env.PROFILE_TOKEN;
@@ -26,16 +27,16 @@ const config = {
  *
  * @throws {Error} If neither `userId` nor `anonymousId` is provided.
  */
-function upsertUser({ userId, anonymousId, traits }) {
+async function upsertUser({ userId, anonymousId, traits }) {
   try {
     if (!userId && !anonymousId) {
       throw new Error('Either `userId` or `anonymousId` must be provided.');
     }
-    analytics.identify({ userId, anonymousId, traits });
+    await analytics.identify({ userId, anonymousId, traits });
+    return ({ status: 'success' });
   } catch (error) {
-    console.error('Error adding user:', error);
+    return ({ status: 'error', error });
   }
-  console.log('add user done');
 }
 
 /**

@@ -76,7 +76,6 @@ const tools = [
         },
         required: ['order', 'number'],
       },
-     
     },
   },
 

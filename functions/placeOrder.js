@@ -4,7 +4,6 @@ require('dotenv').config();
 async function placeOrder(functionArgs) {
   const order = functionArgs.order;
   const number = functionArgs.number;
-  console.log('GPT -> called placeOrder function: ', order);
 
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;

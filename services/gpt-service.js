@@ -11,19 +11,23 @@ tools.forEach((tool) => {
   let functionName = tool.function.name;
   // Note: the function name and file name must be the same
   availableFunctions[functionName] = require(`../functions/${functionName}`);
-  console.log(`loaded function: ${functionName}`);
 });
 
 
 class GptService extends EventEmitter {
-  constructor(model = 'gpt-4o') {
+  constructor(log, model = 'gpt-4o') {
     super();
+    this.log = log;
     this.openai = new OpenAI();
     this.model = model;
-    console.log(`GptService initialized with model: ${model}`);
+    this.log.info(`GptService initialized with model: ${model}`);
     this.userContext = [];
     this.partialResponseIndex = 0;
     this.isInterrupted = false;
+
+    Object.keys(availableFunctions).forEach((fnName) => {
+      this.log.info(`Available function: ${fnName}`);
+    });
   }
 
   initUserContext(cfg) {
@@ -38,7 +42,7 @@ class GptService extends EventEmitter {
 
   // add the callSid to the chat context in case ChatGPT decides to transfer the call
   setCallInfo(info, callSid) {
-    console.log('setCallInfo', info, callSid);
+    this.log.info('setCallInfo', info, callSid);
     this.userContext.push({ 'role': 'user', 'content': `${info}: ${callSid}` });
   }
 
@@ -51,7 +55,7 @@ class GptService extends EventEmitter {
       return JSON.parse(args);
     } catch (error) {
       // we've been seeing an error where sometimes we have two sets of args
-      console.log('Warning: double function arguments returned by OpenAI:', args);
+      this.log.info('Warning: double function arguments returned by OpenAI:', args);
       if (args.indexOf('{') != args.lastIndexOf('{')) {
         return JSON.parse(args.substring(args.indexOf(''), args.indexOf('}') + 1));
       }
@@ -59,7 +63,7 @@ class GptService extends EventEmitter {
   }
 
   updateUserContext(name, role, text) {
-    // console.log('updateUserContext: ', name, role, text)
+    // this.log.info('updateUserContext: ', name, role, text)
     const context = { 'role': role, 'content': text };
     if (name !== 'user')
       context.name = name;
@@ -67,7 +71,7 @@ class GptService extends EventEmitter {
   }
 
   async completion(text, interactionCount, role = 'user', name = 'user') {
-    console.log('GptService completion: ', role, name, text);
+    this.log.info(`GptService completion: ${role} ${name} ${text}`.green);
     this.isInterrupted = false;
     this.updateUserContext(name, role, text);
 
@@ -96,7 +100,7 @@ class GptService extends EventEmitter {
         // args are streamed as JSON string so we need to concatenate all chunks
         functionArgs += args;
       }
-      console.log('collectToolInformation', functionName, functionArgs);
+      this.log.info('collectToolInformation', functionName, functionArgs);
     }
 
     for await (const chunk of stream) {
@@ -120,7 +124,7 @@ class GptService extends EventEmitter {
 
         const functionToCall = availableFunctions[functionName];
         const validatedArgs = this.validateFunctionArgs(functionArgs);
-        // console.log('validatedArgs', validatedArgs);
+        // this.log.info('validatedArgs', validatedArgs);
 
         // say a pre-configured message from the function manifest
         // before running the function.
@@ -130,7 +134,7 @@ class GptService extends EventEmitter {
         this.emit('gptreply', say, false, interactionCount);
 
         let functionResponse = await functionToCall(validatedArgs);
-        // console.log('functionResponse', functionResponse);
+        // this.log.info('functionResponse', functionResponse);
 
         this.emit('tools', functionName, functionArgs, functionResponse);
 
@@ -147,22 +151,22 @@ class GptService extends EventEmitter {
         // use partialResponse to provide a chunk for TTS
         partialResponse += content;
 
-        // console.log('partialResponse', partialResponse);
-        // console.log('completeResponse', completeResponse);
+        // this.log.info('partialResponse', partialResponse);
+        // this.log.info('completeResponse', completeResponse);
        
         if (finishReason === 'stop') {
           this.emit('gptreply', partialResponse, true, interactionCount);
-          console.log('emit gptreply stop');
+          this.log.info('emit gptreply stop');
         }
         else {
           this.emit('gptreply', partialResponse, false, interactionCount);
-          // console.log('emit gptreply partialResponse', partialResponse);
+          // this.log.info('emit gptreply partialResponse', partialResponse);
           partialResponse = '';
         }
       }
     }
     this.userContext.push({'role': 'assistant', 'content': completeResponse});
-    console.log(`GPT -> user context length: ${this.userContext.length}`.green);
+    this.log.info(`GPT -> user context length: ${this.userContext.length}`.green);
   }
 }
 

@@ -7,7 +7,7 @@ const ExpressWs = require('express-ws');
 const { GptService } = require('./services/gpt-service');
 const { TextService } = require('./services/text-service');
 const { recordingService } = require('./services/recording-service');
-//const { upsertUser } = require('./services/segment-service');
+const { upsertUser } = require('./services/segment-service');
 const { getLatestConvRelayCfgRcd } = require('./services/airtable-service');
 const log = require('./services/log-service');
 
@@ -35,7 +35,7 @@ app.post('/incoming', async (_req, res) => {
   try {
     log.info('incoming call started');
     cfg = await getLatestConvRelayCfgRcd();
-    gptService = new GptService(cfg.model);
+    gptService = new GptService(log, cfg.model);
     gptService.initUserContext(cfg);
     log.info(`language : ${cfg.language}, voice : ${cfg.voice}`);
     
@@ -62,50 +62,54 @@ app.ws('/sockets', (ws) => {
     // filled in from start message
     let callSid;
 
-    textService = new TextService(ws);
+    textService = new TextService(log, ws);
 
     let interactionCount = 0;
     
     // handler for incoming data from MediaStreams
     ws.on('message', function message(data) {
       const msg = JSON.parse(data);
-      log.info(msg);
+      log.debug('message:', msg);
+      const {
+        type, callSid, description, digit, from, lang, utteranceUntilInterrupt, voicePrompt
+      } = msg;        
 
-      if (msg.type === 'setup') {
-        callSid = msg.callSid;        
-        log.info(`convrelay socket setup for call ${callSid}`);
-        gptService.setCallInfo('user phone number', msg.from);
+      if (type === 'setup') {
+        log.info(`convrelay socket setup for call ${callSid} from ${from}`);
+        gptService.setCallInfo('phone call SID', callSid);
+
+        upsertUser({ userId: from, anonymousId: null });
 
         //trigger gpt to start 
         gptService.completion('hello', interactionCount);
         interactionCount += 1;
 
         if (cfg.recording) {
-          recordingService(textService, callSid).then(() => {
-            log.info(`Twilio -> Starting recording for ${callSid}`.underline.red);
+          recordingService(textService, callSid).then((recordingSid) => {
+            log.info(`Twilio -> Starting recording ${recordingSid} for call ${callSid}`.underline.red);
           });
         }
       }  
       
-      if (msg.type === 'prompt') {
-        log.info(`convrelay -> GPT (${msg.lang}) : ${msg.voicePrompt} `);
-        gptService.completion(msg.voicePrompt, interactionCount);
+      if (type === 'prompt') {
+        log.info(`convrelay -> GPT (${lang}) : ${voicePrompt} `);
+        gptService.completion(voicePrompt, interactionCount);
         interactionCount += 1;
       } 
       
-      if (msg.type === 'interrupt') {
-        log.info('convrelay interrupt: utteranceUntilInterrupt: ' + msg.utteranceUntilInterrupt + ' durationUntilInterruptMs: ' + msg.durationUntilInterruptMs);
+      if (type === 'interrupt') {
+        log.info('convrelay interrupt: utteranceUntilInterrupt: ' + utteranceUntilInterrupt + ' durationUntilInterruptMs: ' + msg.durationUntilInterruptMs);
         gptService.interrupt();
         log.warn('Todo: add interruption handling');
       }
 
-      if (msg.type === 'error') {
-        log.error('convrelay error: ' + msg.description);
+      if (type === 'error') {
+        log.error('convrelay error: ' + description);
         log.warn('Todo: add error handling');
       }
 
-      if (msg.type === 'dtmf') {
-        log.info('convrelay dtmf: ' + msg.digit);
+      if (type === 'dtmf') {
+        log.info(`convrelay dtmf: ${digit}`);
         log.warn('Todo: add dtmf handling');
       }
     });
