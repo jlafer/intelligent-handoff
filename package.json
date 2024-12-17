@@ -1,6 +1,6 @@
 {
-  "name": "genai-phone",
-  "version": "1.1.0",
+  "name": "intelligent-handoff",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "start": "node app.js"
   },
   "keywords": [],
-  "author": "Hao Wang",
+  "author": "John Lafer",
   "license": "MIT",
   "dependencies": {
     "@deepgram/sdk": "^3.3.4",
