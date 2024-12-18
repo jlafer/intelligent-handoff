@@ -7,7 +7,7 @@ const ExpressWs = require('express-ws');
 const { GptService } = require('./services/gpt-service');
 const { TextService } = require('./services/text-service');
 const { recordingService } = require('./services/recording-service');
-const { upsertUser } = require('./services/segment-service');
+const { getProfileTraits, upsertUser } = require('./services/segment-service');
 const { getLatestConvRelayCfgRcd } = require('./services/airtable-service');
 const log = require('./services/log-service');
 
@@ -67,7 +67,7 @@ app.ws('/sockets', (ws) => {
     let interactionCount = 0;
     
     // handler for incoming data from MediaStreams
-    ws.on('message', function message(data) {
+    ws.on('message', async function message(data) {
       const msg = JSON.parse(data);
       log.debug('message:', msg);
       const {
@@ -79,7 +79,8 @@ app.ws('/sockets', (ws) => {
         gptService.setCallInfo('phone call SID', callSid);
 
         upsertUser({ userId: from, anonymousId: null });
-
+        const profileTraits = await getProfileTraits(from);
+        log.info('profileTraits:', profileTraits);
         //trigger gpt to start 
         gptService.completion('hello', interactionCount);
         interactionCount += 1;
@@ -115,14 +116,14 @@ app.ws('/sockets', (ws) => {
     });
       
     // handler for incoming text data from GPT
-    gptService.on('gptreply', async (gptReply, final, icount) => {
+    gptService.on('gptreply', (gptReply, final, icount) => {
       log.info(`Interaction ${icount}: GPT -> TTS: ${gptReply}`.green);
       log.debug(`GPT -> convrelay: Interaction ${icount}: ${gptReply}`);
       textService.sendText(gptReply, final);
     });
 
     // handler for incoming tool-call data from GPT
-    gptService.on('tools', async (functionName, functionArgs, functionResponse) => {
+    gptService.on('tools', (functionName, functionArgs, functionResponse) => {
       log.info(`function ${functionName} with args ${functionArgs}`);
       log.info(`function response: ${functionResponse}`);
 

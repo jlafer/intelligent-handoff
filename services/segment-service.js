@@ -71,10 +71,10 @@ function addEvent({ userId, anonymousId, event, properties }) {
  */
 async function getProfileTraits(userId) {
   try {
+    const encodedUserId = encodeURIComponent(userId);
+    console.log(`encodedUserId = "${encodedUserId}"`);
     const response = await axios.get(
-      `${baseURL}/spaces/${spaceID}/collections/users/profiles/user_id:${encodeURIComponent(
-        userId
-      )}/traits`,
+      `${baseURL}/spaces/${spaceID}/collections/users/profiles/user_id:${encodedUserId}/traits`,
       config
     );
 
