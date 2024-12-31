@@ -17,17 +17,17 @@ async function getLatestConvRelayCfgRcd() {
         let record = records[0];
       // console.log('getLatestConvRelayCfgRcd: ', record)
         return {
-            sys_prompt: record.get('Prompt') || '',
-            profile: record.get('User Profile') || '',
-            orders: record.get('Orders') || '',
-            inventory: record.get('Inventory') || '',
-            example: record.get('Example') || '',
-            model: record.get('Model') || '',
-            language: record.get('Language') || 'en-US',
-            changeSTT: record.get('SPIChangeSTT') || false,
-            recording: record.get('Recording') || false,
-            transcriptionProvider: record.get('transcriptionProvider') || 'google',
-            voice: record.get('Voice') || ''
+          sys_prompt: record.get('Notes') || '',
+          profile: record.get('User Profile') || '',
+          orders: record.get('Orders') || '',
+          inventory: record.get('Inventory') || '',
+          example: record.get('Example') || '',
+          model: record.get('Model') || '',
+          language: record.get('Language') || 'en-US',
+          changeSTT: record.get('SPIChangeSTT') || false,
+          recording: record.get('Recording') || false,
+          transcriptionProvider: record.get('transcriptionProvider') || 'google',
+          voice: record.get('Voice') || ''
         };
     } catch (error) {
         console.error('Error fetching record:', error);

@@ -3,6 +3,7 @@ require('colors');
 require('log-timestamp');
 const express = require('express');
 const ExpressWs = require('express-ws');
+const urlencoded = require('body-parser').urlencoded;
 
 const { GptService } = require('./services/gpt-service');
 const { TextService } = require('./services/text-service');
@@ -12,6 +13,7 @@ const { getLatestConvRelayCfgRcd } = require('./services/airtable-service');
 const log = require('./services/log-service');
 
 const app = express();
+app.use(urlencoded({ extended: false }));
 ExpressWs(app);
 
 log.open('INFO', 'app.log');
@@ -31,10 +33,16 @@ app.get('/logs', (_req, res) => {
   res.json(log.getAll());
 });
 
-app.post('/incoming', async (_req, res) => {
+app.post('/incoming', async (req, res) => {
   try {
-    log.info('incoming call started');
+    const { From: from } = req.body;
+    log.info('incoming call; connecting to ConversationRelay');
+    log.debug('call data:', req.body);
     cfg = await getLatestConvRelayCfgRcd();
+    log.debug('cfg:', cfg);
+    await upsertUser({ userId: from, anonymousId: null });
+    const profileTraits = await getProfileTraits(from);
+    cfg.profile = `The user's full name is ${profileTraits.name}`;
     gptService = new GptService(log, cfg.model);
     gptService.initUserContext(cfg);
     log.info(`language : ${cfg.language}, voice : ${cfg.voice}`);
@@ -71,14 +79,14 @@ app.ws('/sockets', (ws) => {
       const msg = JSON.parse(data);
       log.debug('message:', msg);
       const {
-        type, callSid, description, digit, from, lang, utteranceUntilInterrupt, voicePrompt
+        type, callSid, description, digit, from, lang, utteranceUntilInterrupt,
+        voicePrompt, durationUntilInterruptMs
       } = msg;        
 
       if (type === 'setup') {
         log.info(`convrelay socket setup for call ${callSid} from ${from}`);
         gptService.setCallInfo('phone call SID', callSid);
 
-        upsertUser({ userId: from, anonymousId: null });
         const profileTraits = await getProfileTraits(from);
         log.info('profileTraits:', profileTraits);
         //trigger gpt to start 
@@ -93,19 +101,19 @@ app.ws('/sockets', (ws) => {
       }  
       
       if (type === 'prompt') {
-        log.info(`convrelay -> GPT (${lang}) : ${voicePrompt} `);
+        log.info(`convrelay prompt: (${lang}) : ${voicePrompt}`);
         gptService.completion(voicePrompt, interactionCount);
         interactionCount += 1;
       } 
       
       if (type === 'interrupt') {
-        log.info('convrelay interrupt: utteranceUntilInterrupt: ' + utteranceUntilInterrupt + ' durationUntilInterruptMs: ' + msg.durationUntilInterruptMs);
+        log.info(`convrelay interrupt: utteranceUntilInterrupt: ${utteranceUntilInterrupt} durationUntilInterruptMs: ${durationUntilInterruptMs}`);
         gptService.interrupt();
         log.warn('Todo: add interruption handling');
       }
 
       if (type === 'error') {
-        log.error('convrelay error: ' + description);
+        log.error(`convrelay error: ${description}`);
         log.warn('Todo: add error handling');
       }
 
@@ -118,7 +126,7 @@ app.ws('/sockets', (ws) => {
     // handler for incoming text data from GPT
     gptService.on('gptreply', (gptReply, final, icount) => {
       log.info(`Interaction ${icount}: GPT -> TTS: ${gptReply}`.green);
-      log.debug(`GPT -> convrelay: Interaction ${icount}: ${gptReply}`);
+      log.debug(`gptreply: interaction number ${icount}: ${gptReply}`);
       textService.sendText(gptReply, final);
     });
 
