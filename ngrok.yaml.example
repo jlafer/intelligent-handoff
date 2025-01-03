@@ -1,0 +1,23 @@
+
+authtoken: <YOUR NGROK AUTH TOKEN>
+tunnels:
+  iva:
+    addr: 3000
+    proto: http
+    subdomain: iva-<YOUR_NGROK_SUBDOMAIN>
+    host_header: iva.<YOUR_NGROK_SUBDOMAIN>.ngrok.io
+  serverless:
+    addr: 3001
+    proto: http
+    subdomain: serverless-<YOUR_NGROK_SUBDOMAIN>
+    host_header: serverless.<YOUR_NGROK_SUBDOMAIN>.ngrok.io
+  flex:
+    addr: 3002
+    proto: http
+    subdomain: flex-<YOUR_NGROK_SUBDOMAIN>
+    host_header: flex.<YOUR_NGROK_SUBDOMAIN>.ngrok.io
+  kb:
+    addr: 3003
+    proto: http
+    subdomain: kb-<YOUR_NGROK_SUBDOMAIN>
+    host_header: kb.<YOUR_NGROK_SUBDOMAIN>.ngrok.io

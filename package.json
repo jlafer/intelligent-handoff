@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "initKB": "node initKB.js",
+    "kb": "nodemon kb.js",
     "test": "jest",
+    "testLoadKB": "node test/testLoadKB.js",
+    "testKB": "node test/testKB.js",
+    "testRAG": "node test/testRAG.js",
     "dev": "nodemon app.js",
     "start": "node app.js"
   },
@@ -20,6 +25,7 @@
     "express": "^4.19.2",
     "express-ws": "^5.0.2",
     "log-timestamp": "^0.3.0",
+    "mongodb": "^6.12.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.20.1",
     "segment": "^0.1.3",

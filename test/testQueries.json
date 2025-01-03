@@ -1,0 +1,26 @@
+[
+  {
+    "q": "Do you have the loafers in brown?",
+    "a": "Yes, we have the loafers in brown."
+  },
+  {
+    "q": "Do you have the loafers in black?",
+    "a": "No, I'm sorry. We don't have the loafers in black."
+  },
+  {
+    "q": "How long does it take to ship?",
+    "a": "Shipping takes 3-5 business days."
+  },
+  {
+    "q": "What is your return policy?",
+    "a": "We accept returns within 30 days of purchase."
+  },
+  {
+    "q": "Do you have a physical store?",
+    "a": "Yes, we have a store located in New York City."
+  },
+  {
+    "q": "What sizes do you carry?",
+    "a": "We carry sizes 6-12."
+  }
+]

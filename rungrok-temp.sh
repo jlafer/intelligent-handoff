@@ -1,0 +1,1 @@
+ngrok start --config ./ngrok-temporary.yaml --all

@@ -81,7 +81,7 @@ class GptService extends EventEmitter {
       messages: this.userContext,
       tools: tools,
       stream: true,
-      temperature: 0.5,
+      temperature: 0.0,
     });
 
     let completeResponse = '';
@@ -100,7 +100,8 @@ class GptService extends EventEmitter {
         // args are streamed as JSON string so we need to concatenate all chunks
         functionArgs += args;
       }
-      this.log.info('collectToolInformation', functionName, functionArgs);
+      //this.log.info('collectToolInformation', functionName, functionArgs);
+      console.log('collectToolInformation', functionName, functionArgs);
     }
 
     for await (const chunk of stream) {
@@ -114,7 +115,7 @@ class GptService extends EventEmitter {
 
       // if GPT wants to call a function
       if (deltas.tool_calls) {
-        // collect the tokens containing function data
+        // collect the (partial) tokens containing function data
         collectToolInformation(deltas);
       }
 
@@ -131,7 +132,8 @@ class GptService extends EventEmitter {
         const toolData = tools.find(tool => tool.function.name === functionName);
         const say = toolData.function.say;
 
-        this.emit('gptreply', say, false, interactionCount);
+        if (say)
+          this.emit('gptreply', say, false, interactionCount);
 
         let functionResponse = await functionToCall(validatedArgs);
         // this.log.info('functionResponse', functionResponse);
@@ -166,6 +168,7 @@ class GptService extends EventEmitter {
       }
     }
     this.userContext.push({'role': 'assistant', 'content': completeResponse});
+    this.log.info(`GPT -> completion response: ${completeResponse}`.blue);
     this.log.info(`GPT -> user context length: ${this.userContext.length}`.green);
   }
 }

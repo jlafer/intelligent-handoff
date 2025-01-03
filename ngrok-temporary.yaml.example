@@ -1,0 +1,9 @@
+authtoken: <YOUR NGROK AUTH TOKEN>
+version: "2"
+tunnels:
+  iva:
+    addr: 3000
+    proto: http
+  kb:
+    addr: 3003
+    proto: http

@@ -145,3 +145,7 @@ dist
 fly.toml
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+
+#ngrok configuration file
+ngrok.yaml
+ngrok-temporary.yaml

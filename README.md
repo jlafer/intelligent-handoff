@@ -5,17 +5,15 @@ Twilio gives you a superpower called Conversation Relay, it provides a Websocket
 This app serves as a demo exploring:
 - Conversation Relay features
 - [OpenAI](https://openai.com) for GPT prompt completion
-- Low code options with Airtable, so easy to build different use cases.
-
+- Use of a knowledge base (KB) in support of retrieval-augmented generation (RAG) with an LLM
+- Automatic population of a knowledge base from exemplary live agent conversations
+- Use of sentiment score and disposition codes to filter the conversations that populate the KB
 
 Features:
 - 🏁 Returns responses with low latency, typically 1 second by utilizing streaming.
 - ❗️ Allows the user to tweak the promt via Airtable to build different use cases.
 - 📔 Maintains chat history with GPT.
 - 🛠️ Allows the GPT to call external tools, currently support:
-	- getWeather from openweathermap
- 	- changeLanguage during the conversation 
- 	- placeOrder(simulate confirm and send SMS)
 
 ## Setting up for Development
 
@@ -24,8 +22,6 @@ Sign up for the following services and get an API key for each:
 - [Airtable](https://www.airtable.com)
 - [OpenAI](https://platform.openai.com/signup)
 - [Twilio](https://www.twilio.com)
-- [Openweathermap](http://api.openweathermap.org)
-
 
 
 You should get your Twilio Account Flag (Voice - Enable Conversation Relay) enabled as well.
@@ -33,7 +29,7 @@ You should get your Twilio Account Flag (Voice - Enable Conversation Relay) enab
 If you're hosting the app locally, we also recommend using a tunneling service like [ngrok](https://ngrok.com) so that Twilio can forward audio to your app.
 
 ### 1. Configure Environment Variables
-Copy `.env.example` to `.env` and configure the environment variables.
+Copy `.env.example` to `.env` and configure the environment variables. See the `ngrok` section below for information on how to set the server and port variables.
 
 ### 2. Install Dependencies with NPM
 Install the necessary packages:
@@ -55,36 +51,61 @@ You can add a new record with your own prompt. The most recently updated record 
 
 You can generate Airtable access tokens at the [link](https://airtable.com/create/tokens), and the base ID should be a string similar to 'appUnia3pFUA5rPlr' in your table's URL. Make sure to set both the access token and base ID correctly in your .env file.
 
+### 4. Configure and Start Ngrok
+Sample `ngrok` scripts and configuration files, which provide tunnels for all of the local servers (i.e., `localhost` on ports 3000-3003), have been provided.
+You must have a (free or subscription) ngrok account and an ngrok authorization token. Having a custom subdomain is highly recommended but not required.
 
+If you have a custom subdomain, use the shell script `rungrok.sh` to start your tunneling service, whereas if you use a temporary subdomain provided by ngrok at runtime, use the `rungrok-temp.sh` script. In either case, you must edit the corresponding example YAML configuration file to set the correct parameters for your `ngrok` service.
 
-### 4. Start Ngrok
-Start an [ngrok](https://ngrok.com) tunnel for port `3000`:
+Copy the example ngrok configuration file `ngrok.yaml.example` to `ngrok.yaml` or copy `ngrok-temporary.yaml.example` to `ngrok-temporary.yaml` and edit the copy to supply the authorization token and/or custom subdomain for your own `ngrok` tunneling service.
+
+Start the tunneling service for ports `3000`, `3001`, `3002` and `3003`:
 
 ```bash
-ngrok http 3000
+./rungrok.sh
 ```
-Ngrok will give you a unique URL, like `abc123.ngrok.io`. Copy the URL without http:// or https://, set this for 'SERVER' in your .env.
+or
+```bash
+./rungrok-temp.sh
+```
 
-### 5. Start Your Server in Development Mode
+Based on your YAML file, ngrok will assign you four (4) subdomains for tunneling to your localhost ports. If you don't have custom subdomains, `ngrok` will assign you new subdomain names whenever ngrok restarts. The subdomain names will be like `iva-jlafer-demo.ngrok.io` (custom) or `abc123.ngrok.app` (temporary). Copy the `iva` subdomain (i.e., the one for port 3000) and set the 'SERVER' variable in your `.env` file. In a similar manner, set `SERVERLESS_SERVER`, `FLEX_SERVER` and `KB_SERVER` for the ports 3001, 3002 nd 3003, respectively. 
+
+### 5. Prepare the Knowledge Base
+When the IVA lacks the knowledge required to give a factual response to the caller, it will ues the `askForExample` function to query the KB. The KB lives in a MongoDB database collection that must be prepared. The `kb.js` module implements an endpoint that provides all KB services. It uses three environment variables: `MONGODB_URI`, `MONGODB_DB` and `QUERY_VECTOR_COLLECTION`. To develop and test with your own database instance, you must provision MongoDB either locally or in a cloud service. The easiest and cheapest way is with the free version of the cloud service [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register).
+
+Once you have a MongoDB cluster, create a database (e.g., named "sko25_hackathon") and use your Mongo connection URI. For MongoDB Atlas, the URI can be found by going to the 'Clusters' page and then clicking the 'Connect' button and then the 'Drivers' button. 
+
+Once you have your database created and your Mongo-related environment variables set, run the command `npm run initKB` to create the collection and build a search index.
+
+If you want to pre-load the KB with some sample query-response pairs, run the command `npm run testLoadKB`. You can change the sample queries by editing the file `test/testQueries.json`. If you want to drop the KB contents, run the `initKB` script again. NOTE: the `initKB` script normally fails with an error stating that the index already exists. This is a timing problem with cloud-level propagation of resources so wait a few seconds and then run it again. It should run fine the second time.
+
+To submit test queries to the semantic search capability, run the `testKB` script like so:
+```bash
+npm run testKB 'Do you have a store in New York?'
+```
+
+### 6. Start Your Server in Development Mode
 Run the following command:
 ```bash
 npm run dev
 ```
 This will start your app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
 
-### 6. Configure an Incoming Phone Number
+### 7. Configure an Incoming Phone Number
+The Programmable Voice inbound event handler webhooks to your IVA server on port 3000, so you must also change the configuration for your phone number webhook URL to use your tunnel address (e.g., `https://iva-jlafer-demo.ngrok.io/incoming` or `https://abc123.ngrok.app/incoming`).
 
-Connect a phone number using the [Twilio Console](https://console.twilio.com/us1/develop/phone-numbers/manage/incoming).
+You configure a phone number in the [Twilio Console](https://console.twilio.com/us1/develop/phone-numbers/manage/incoming).
 
 You can also use the Twilio CLI:
 
 ```bash
-twilio phone-numbers:update +1[your-twilio-number] --voice-url=https://your-server.ngrok.io/incoming
+twilio phone-numbers:update +1[your-twilio-number] --voice-url=https://abc123.ngrok.app/incoming
 ```
-This configuration tells Twilio to send incoming call audio to your app when someone calls your number. The app responds to the incoming call webhook with a [Stream](https://www.twilio.com/docs/voice/twiml/stream) TwiML verb that will connect an audio media stream to your websocket server.
+This configuration tells Twilio to send incoming call audio to your IVA app when someone calls your number. The app responds to the incoming call webhook with a [Stream](https://www.twilio.com/docs/voice/twiml/stream) TwiML verb that will connect an audio media stream to your websocket server.
 
 
-### 7. Modifying the ChatGPT Context & Prompt
+### 8. Modifying the ChatGPT Context & Prompt
 - You can tweak the prompt and some other options via Airtable, either modify your record directly, or create and use your Airtable form as below.
 
 ![Airtable Form](images/airtable-form.png)
@@ -105,7 +126,7 @@ You can customize the bot's behavior and user experience using the following fie
 - SPIChangeSTT: Enable dynamic language changes during a conversation when requested.
 
 
-### 8. Monitor and Logs 
+### 9. Monitor and Logs 
 You can monitor logs at https://you-server-address/monitor
 ![ConvRelay-Logs](images/convrelay-logs.png)
 
