@@ -5,7 +5,7 @@ const { GptService } = require('../services/gpt-service');
 const log = require('../services/log-service');
 const { getProfileTraits, upsertUser } = require('../services/segment-service');
 
-log.open('INFO', 'testRAG.log');
+log.open('INFO', 'test/testRAG.log');
 
 async function init() {
   try {

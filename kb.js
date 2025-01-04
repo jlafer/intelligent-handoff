@@ -83,13 +83,15 @@ app.post('/searchQueryVector', async (req, res) => {
     // run the pipeline
     const result = collection.aggregate(agg);
 
-    // print results
-    const docs = [];
+    let docs = [];
     await result.forEach((doc) => {
-      docs.push({ q: doc.question, a: doc.answer, score: doc.score });
+      if (doc.score > 0.8) {
+        docs.push({ q: doc.question, a: doc.answer, score: doc.score });
+      }
     });
 
-    res.status(200).send(JSON.stringify([docs[0], docs[1]]));
+    const matches = (docs.length > 0) ? docs : [{ q: question, a: 'That question is going to require the assistance of a live service rep.', score: 0 }];
+    res.status(200).send(JSON.stringify(matches));
   } catch (err) {
     log.error(err);
   }

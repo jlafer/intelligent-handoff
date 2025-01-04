@@ -85,12 +85,18 @@ To submit test queries to the semantic search capability, run the `testKB` scrip
 npm run testKB 'Do you have a store in New York?'
 ```
 
-### 6. Start Your Server in Development Mode
-Run the following command:
+### 6. Start Your Servers in Development Mode
+Run the following command to start the KB server:
+```bash
+npm run kb
+```
+This will start the KB app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
+
+In another terminal window, run the following command to start the IVA:
 ```bash
 npm run dev
 ```
-This will start your app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
+This will start the IVA (Conversation Relay) app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
 
 ### 7. Configure an Incoming Phone Number
 The Programmable Voice inbound event handler webhooks to your IVA server on port 3000, so you must also change the configuration for your phone number webhook URL to use your tunnel address (e.g., `https://iva-jlafer-demo.ngrok.io/incoming` or `https://abc123.ngrok.app/incoming`).

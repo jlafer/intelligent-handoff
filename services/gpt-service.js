@@ -122,7 +122,6 @@ class GptService extends EventEmitter {
       // call function on behalf of Chat GPT with the arguments it parsed from the conversation
       if (finishReason === 'tool_calls') {
         // parse JSON string of args into JSON object
-
         const functionToCall = availableFunctions[functionName];
         const validatedArgs = this.validateFunctionArgs(functionArgs);
         // this.log.info('validatedArgs', validatedArgs);
@@ -131,7 +130,6 @@ class GptService extends EventEmitter {
         // before running the function.
         const toolData = tools.find(tool => tool.function.name === functionName);
         const say = toolData.function.say;
-
         if (say)
           this.emit('gptreply', say, false, interactionCount);
 
@@ -140,8 +138,8 @@ class GptService extends EventEmitter {
 
         this.emit('tools', functionName, functionArgs, functionResponse);
 
-        // send the info on the function call and function response to GPT
-        this.updateUserContext(functionName, 'function', functionResponse);
+        // use the info on the function call and response to update the GPT context
+        //this.updateUserContext(functionName, 'function', functionResponse);
         
         // call the completion function again but pass in the function response
         // to have OpenAI generate a new assistant response
