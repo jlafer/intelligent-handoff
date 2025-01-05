@@ -90,7 +90,7 @@ app.post('/searchQueryVector', async (req, res) => {
       }
     });
 
-    const matches = (docs.length > 0) ? docs : [{ q: question, a: 'That question is going to require the assistance of a live service rep.', score: 0 }];
+    const matches = (docs.length > 0) ? docs : [{ q: question, a: 'NO_EXAMPLE_FOUND', score: 0 }];
     res.status(200).send(JSON.stringify(matches));
   } catch (err) {
     log.error(err);
