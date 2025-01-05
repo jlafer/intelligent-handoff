@@ -149,3 +149,6 @@ fly.toml
 #ngrok configuration file
 ngrok.yaml
 ngrok-temporary.yaml
+
+# Macintosh Finder directory files
+.DS_Store

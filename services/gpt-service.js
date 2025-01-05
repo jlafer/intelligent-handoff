@@ -62,18 +62,20 @@ class GptService extends EventEmitter {
     }
   }
 
-  updateUserContext(name, role, text) {
+  updateUserContext(name, role, text, toolCallId) {
     // this.log.info('updateUserContext: ', name, role, text)
     const context = { 'role': role, 'content': text };
     if (name !== 'user')
       context.name = name;
+    if (toolCallId !== '')
+      context.tool_call_id = toolCallId;
     this.userContext.push(context);
   }
 
-  async completion(text, interactionCount, role = 'user', name = 'user') {
+  async completion(text, interactionCount, role = 'user', name = 'user', id = '') {
     this.log.info(`GptService completion: ${role} ${name} ${text}`.green);
     this.isInterrupted = false;
-    this.updateUserContext(name, role, text);
+    this.updateUserContext(name, role, text, id);
 
     // send user transcription to Chat GPT
     let stream = await this.openai.chat.completions.create({
@@ -86,16 +88,21 @@ class GptService extends EventEmitter {
 
     let completeResponse = '';
     let partialResponse = '';
+    let toolCallId = '';
     let functionName = '';
     let functionArgs = '';
     let finishReason = '';
 
     function collectToolInformation(deltas) {
+      if (toolCallId === '') {
+        toolCallId = deltas.tool_calls[0].id;
+      }
       let name = deltas.tool_calls[0]?.function?.name || '';
       if (name != '') {
         functionName = name;
       }
       let args = deltas.tool_calls[0]?.function?.arguments || '';
+      console.log('collectToolInformation.toolCall:', deltas.tool_calls[0]);
       if (args != '') {
         // args are streamed as JSON string so we need to concatenate all chunks
         functionArgs += args;
@@ -121,6 +128,7 @@ class GptService extends EventEmitter {
 
       // call function on behalf of Chat GPT with the arguments it parsed from the conversation
       if (finishReason === 'tool_calls') {
+        this.log.info('delta for tool_calls:', deltas);
         // parse JSON string of args into JSON object
         const functionToCall = availableFunctions[functionName];
         const validatedArgs = this.validateFunctionArgs(functionArgs);
@@ -139,11 +147,23 @@ class GptService extends EventEmitter {
         this.emit('tools', functionName, functionArgs, functionResponse);
 
         // use the info on the function call and response to update the GPT context
-        //this.updateUserContext(functionName, 'function', functionResponse);
-        
+        const toolCallData = {
+          tool_calls: [{
+            id: toolCallId,
+            type: 'function',
+            function: {
+              name: functionName,
+              arguments: functionArgs
+            }
+          }],
+          role: 'assistant'
+        };
+        this.log.info('adding function call to user context:', toolCallData);
+        this.userContext.push(toolCallData);
+
         // call the completion function again but pass in the function response
         // to have OpenAI generate a new assistant response
-        await this.completion(functionResponse, interactionCount, 'function', functionName);
+        await this.completion(functionResponse, interactionCount, 'tool', functionName, toolCallId);
       } 
       else {
         // use completeResponse for userContext
