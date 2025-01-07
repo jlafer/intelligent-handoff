@@ -4,22 +4,29 @@ require('log-timestamp');
 const express = require('express');
 const ExpressWs = require('express-ws');
 const urlencoded = require('body-parser').urlencoded;
+const twilio = require('twilio');
 
 const { GptService } = require('./services/gpt-service');
 const { TextService } = require('./services/text-service');
 const { recordingService } = require('./services/recording-service');
 const { getProfileTraits, upsertUser } = require('./services/segment-service');
 const { getLatestConvRelayCfgRcd } = require('./services/airtable-service');
+const { transferToLiveAgent } = require('./functions/transferToLiveAgent');
 const log = require('./services/log-service');
 
 const app = express();
 app.use(urlencoded({ extended: false }));
+app.use(express.json());
 ExpressWs(app);
 
 log.open('INFO', 'app.log');
 log.info('Server started');
 
 const PORT = process.env.PORT || 3000;
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = twilio(accountSid, authToken);
 
 let gptService; 
 let textService;
@@ -49,7 +56,7 @@ app.post('/incoming', async (req, res) => {
     
     const response = 
     `<Response>
-      <Connect>
+      <Connect action="${process.env.CONNECT_ACTION_URI}">
         <ConversationRelay url="wss://${process.env.SERVER}/sockets" dtmfDetection="true" voice="${cfg.voice}" language="${cfg.language}" transcriptionProvider="${cfg.transcriptionProvider}">
           <Language code="fr-FR" ttsProvider="google" voice="fr-FR-Neural2-B" />
           <Language code="es-ES" ttsProvider="google" voice="es-ES-Neural2-B" />
@@ -131,6 +138,11 @@ app.ws('/sockets', (ws) => {
     });
 
     // handler for incoming tool-call data from GPT
+    gptService.on('transferToLiveAgent', () => {
+      transferToLiveAgent(textService, gptService, ws);
+    });
+
+    // handler for incoming tool-call data from GPT
     gptService.on('tools', (functionName, functionArgs, functionResponse) => {
       log.info(`function ${functionName} with args ${functionArgs}`);
       log.info(`function response: ${functionResponse}`);
@@ -144,6 +156,35 @@ app.ws('/sockets', (ws) => {
     });
   } catch (err) {
     log.error(err);
+  }
+});
+
+
+app.post('/transcripts', async (req, res) => {
+  try {
+    log.info('transcript data:', req.body);
+    if (!req.body.transcript_sid) {
+      log.warn('transcript_sid not found in transcript payload???');
+      return res.status(200).end();
+    }
+    const transcriptSid = req.body.transcript_sid;
+
+    const sentences = await client.intelligence.v2
+      .transcripts(transcriptSid)
+      .sentences.list({ limit: 20 });
+
+    if (sentences && sentences.length > 0) {
+      sentences.forEach((sentence) => {
+        const { media_channel, transcript, words, sentence_index } = sentence;
+        log.info(`sentence media_channel: ${media_channel}`);
+        log.info('sentence text:', transcript);
+        log.info(`sentence index: ${sentence_index}`);
+      });
+    }
+    res.status(200).end();
+  } catch (err) {
+    log.error(err);
+    res.status(500).end();
   }
 });
 

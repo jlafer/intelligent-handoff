@@ -141,6 +141,11 @@ class GptService extends EventEmitter {
         if (say)
           this.emit('gptreply', say, false, interactionCount);
 
+        if (functionName === 'transferToLiveAgent') {
+          this.emit('transferToLiveAgent');
+          return;
+        }
+
         let functionResponse = await functionToCall(validatedArgs);
         // this.log.info('functionResponse', functionResponse);
 
@@ -188,6 +193,18 @@ class GptService extends EventEmitter {
     this.userContext.push({'role': 'assistant', 'content': completeResponse});
     this.log.info(`GPT -> completion response: ${completeResponse}`.blue);
     this.log.info(`GPT -> user context length: ${this.userContext.length}`.green);
+  }
+
+  async summarizeConversation() {
+    const summaryPrompt = "Summarize the conversation so far in 2-3 sentences.";
+    const summaryResponse = await this.openai.chat.completions.create({
+      model: this.model,
+      messages: [
+        ...this.userContext,
+        { role: "system", content: summaryPrompt },
+      ],
+    });
+    return summaryResponse.choices[0]?.message?.content || "No summary available.";
   }
 }
 

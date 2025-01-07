@@ -136,33 +136,22 @@ const tools = [
     },
   },
 
-  // {
-  //   type: 'function',
-  //   function: {
-  //     name: 'transferCall',
-  //     say: 'One moment while I transfer your call.',
-  //     description: 'Transfers the customer to a live agent in case they request help from a real person.',
-  //     parameters: {
-  //       type: 'object',
-  //       properties: {
-  //         callSid: {
-  //           type: 'string',
-  //           description: 'The unique identifier for the active phone call.',
-  //         },
-  //       },
-  //       required: ['callSid'],
-  //     },
-  //     returns: {
-  //       type: 'object',
-  //       properties: {
-  //         status: {
-  //           type: 'string',
-  //           description: 'Whether or not the customer call was successfully transfered'
-  //         },
-  //       }
-  //     }
-  //   },
-  // },
+  {
+    type: 'function',
+    function: {
+      name: 'transferToLiveAgent',
+      description: 'Transfers the customer to a live agent.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+      returns: {
+        type: 'object',
+        properties: {},
+      }
+    },
+  },
 
   {
     type: 'function',
