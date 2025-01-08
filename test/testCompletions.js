@@ -5,11 +5,12 @@ const { GptService } = require('../services/gpt-service');
 const log = require('../services/log-service');
 const { getProfileTraits, upsertUser } = require('../services/segment-service');
 
-log.open('INFO', 'test/testRAG.log');
+log.open('INFO', 'test/testCompletions.log');
 
 async function init() {
   try {
-    const context = require('fs').readFileSync('./test/testRAG.txt', 'utf-8');
+    const contextFile = `./test/${process.argv[2]}/context.txt`;
+    const context = require('fs').readFileSync(contextFile, 'utf-8');
     const cfg = {
       sys_prompt: context,
       profile: '',
@@ -24,12 +25,9 @@ async function init() {
       voice: 'en-GB-Journey-D'
     }
     log.debug('cfg:', cfg);
-    await upsertUser({ userId: '+12088747271', anonymousId: null });
-    const profileTraits = await getProfileTraits('+12088747271');
-    cfg.profile = `The user's full name is ${profileTraits.name}`;
     const gptService = new GptService(log, cfg.model);
-    gptService.initUserContext(cfg);
-    log.info(`language : ${cfg.language}, voice : ${cfg.voice}`);
+    gptService.updateUserContext('system', 'system', context);
+    //log.info(`language : ${cfg.language}, voice : ${cfg.voice}`);
 
     // handler for incoming text data from GPT
     gptService.on('gptreply', (gptReply, final, icount) => {
@@ -50,7 +48,8 @@ async function doCompletion(gptService, line, interactionCount) {
 
 async function main() {
   const gptService = await init();
-  const userInput = require('fs').readFileSync('./test/userInput.txt', 'utf-8').split('\n');
+  const userInputFile = `./test/${process.argv[2]}/userInput.txt`;
+  const userInput = require('fs').readFileSync(userInputFile, 'utf-8').split('\n');
   let interactionCount = 0;
   for (const line of userInput) {
     await doCompletion(gptService, line, interactionCount);

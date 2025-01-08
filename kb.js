@@ -37,7 +37,7 @@ async function init() {
 
 app.post('/saveQueryVector', async (req, res) => {
   try {
-    //log.info('req.body = ', req.body);
+    log.info('/saveQueryVector req.body = ', req.body);
     const { q: question, a: answer } = req.body;
     log.info(`vectorizing question -${question}- and answer -${answer}-`);
     // vectorize question

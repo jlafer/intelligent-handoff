@@ -9,7 +9,8 @@
     "test": "jest",
     "testLoadKB": "node test/testLoadKB.js",
     "testKB": "node test/testKB.js",
-    "testRAG": "node test/testRAG.js",
+    "testCompletions": "node test/testCompletions.js",
+    "testConvoToPairs": "node test/testConvoToPairs.js",
     "dev": "nodemon app.js",
     "start": "node app.js"
   },
@@ -20,6 +21,7 @@
     "@deepgram/sdk": "^3.3.4",
     "@segment/analytics-node": "^2.2.0",
     "airtable": "^0.12.2",
+    "axios": "^1.7.9",
     "colors": "^1.4.0",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",

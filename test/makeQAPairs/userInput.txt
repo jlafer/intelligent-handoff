@@ -1,0 +1,14 @@
+Input Conversation
+Agent: Hello, this is Tammy with Owl Shoes. How may I help you today?
+Customer: Hi, this is Sarah. I saw some tennis shoes on your website but I have a couple questions.
+Agent: Well, thanks for visiting our website Tammy. I'm happy to assist you. What's your question?
+Customer: Okay, there is a picture of the Endurance model in a pink color but the dropdown menu doesn't include pink. So do you have those shoes in pink?
+Agent: Let me check on that. Please hold on for a second. Yes, Tammy, we carry those in pink but we call that color 'rose' for some reason. You should see that in the dropdown menu.
+Customer: Oh yes, I see that. Alright, than answers that.
+Agent: Did you have a second question?
+Customer: Yes, for that same model, do you carry them in a size 11 for women?
+Agent: Yes, we do. Owl Shoes carries all women's shoes in sizs 6 through 12.
+Customer: Great! Thanks you. That's all I needed.
+Agent: Well, thanks for calling and if you have any further questions, please feel free to reach out.
+Customer: Will do. Goodbye.
+Agent: Goodbye.

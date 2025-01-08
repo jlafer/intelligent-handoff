@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('colors');
 require('log-timestamp');
+const axios = require('axios');
 const express = require('express');
 const ExpressWs = require('express-ws');
 const urlencoded = require('body-parser').urlencoded;
@@ -173,13 +174,21 @@ app.post('/transcripts', async (req, res) => {
       .transcripts(transcriptSid)
       .sentences.list({ limit: 20 });
 
-    if (sentences && sentences.length > 0) {
+    if (sentences && sentences.length > 1) {
+      let transcript = '';
+      let index = 0;
       sentences.forEach((sentence) => {
-        const { media_channel, transcript, words, sentence_index } = sentence;
-        log.info(`sentence media_channel: ${media_channel}`);
-        log.info('sentence text:', transcript);
-        log.info(`sentence index: ${sentence_index}`);
+        const { media_channel, transcript: text, words, sentence_index } = sentence;
+        //log.info(`sentence media_channel: ${media_channel}`);
+        //log.info(`sentence index: ${sentence_index}`);
+        log.info('sentence text:', text);
+        const role = (index === 0) ? 'Agent' : 'Customer';
+        transcript += `${role}: ${text}\n`
+        index = (index === 0) ? 1 : 0;
       });
+      const query = { transcript }
+      const response = await axios.post(`http://localhost:${process.env.SERVERLESS_PORT}/convoToQAPair`, query);
+      log.info('convoToQAPair response:', response.data);
     }
     res.status(200).end();
   } catch (err) {

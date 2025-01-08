@@ -8,8 +8,10 @@
     "deploy": "twilio-run deploy"
   },
   "dependencies": {
-    "twilio": "5.0.3",
-    "@twilio/runtime-handler": "2.0.0"
+    "@twilio/runtime-handler": "2.0.0",
+    "axios": "^1.7.9",
+    "openai": "^4.20.1",
+    "twilio": "5.0.3"
   },
   "devDependencies": {
     "twilio-run": "^4.0.0"
