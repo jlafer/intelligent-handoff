@@ -1,4 +1,4 @@
-# Conversation Relay Sample App, Low code with Airtable
+# Conversation Relay with Automated KB Loading
 
 Twilio gives you a superpower called Conversation Relay, it provides a Websocket connection, STT and TTS integrated with optimised latency, so you can easily build a voice bot with your own LLM.
 
@@ -7,7 +7,6 @@ This app serves as a demo exploring:
 - [OpenAI](https://openai.com) for GPT prompt completion
 - Use of a knowledge base (KB) in support of retrieval-augmented generation (RAG) with an LLM
 - Automatic population of a knowledge base from exemplary live agent conversations
-- Use of sentiment score and disposition codes to filter the conversations that populate the KB
 
 Features:
 - 🏁 Returns responses with low latency, typically 1 second by utilizing streaming.
@@ -22,17 +21,17 @@ Sign up for the following services and get an API key for each:
 - [Airtable](https://www.airtable.com)
 - [OpenAI](https://platform.openai.com/signup)
 - [Twilio](https://www.twilio.com)
-
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) (optional - see below)
 
 You should get your Twilio Account Flag (Voice - Enable Conversation Relay) enabled as well.
 
-If you're hosting the app locally, we also recommend using a tunneling service like [ngrok](https://ngrok.com) so that Twilio can forward audio to your app.
+If you're hosting the app locally, we also recommend using a tunneling service like [ngrok](https://ngrok.com) so that Twilio can forward audio and webhooks to your app.
 
 ### 1. Configure Environment Variables
 Copy `.env.example` to `.env` and configure the environment variables. See the `ngrok` section below for information on how to set the server and port variables.
 
 ### 2. Install Dependencies with NPM
-Install the necessary packages:
+Install the necessary packages. At the root directory of the project, run the following command.
 
 ```bash
 npm install
@@ -69,36 +68,23 @@ or
 ./rungrok-temp.sh
 ```
 
-Based on your YAML file, ngrok will assign you four (4) subdomains for tunneling to your localhost ports. If you don't have custom subdomains, `ngrok` will assign you new subdomain names whenever ngrok restarts. The subdomain names will be like `iva-jlafer-demo.ngrok.io` (custom) or `abc123.ngrok.app` (temporary). Copy the `iva` subdomain (i.e., the one for port 3000) and set the 'SERVER' variable in your `.env` file. In a similar manner, set `SERVERLESS_SERVER`, `FLEX_SERVER` and `KB_SERVER` for the ports 3001, 3002 nd 3003, respectively. 
+Based on your YAML file, ngrok will assign you four (4) subdomains for tunneling to your localhost ports. If you don't have custom subdomains, `ngrok` will assign you new subdomain names whenever ngrok restarts. The subdomain names will be like `iva-jlafer-demo.ngrok.io` (custom) or `abc123.ngrok.app` (temporary). Copy the `iva` subdomain (i.e., the one for port 3000) and set the 'SERVER' variable in your `.env` file. In a similar manner, set `SERVERLESS_SERVER`, `FLEX_SERVER` and `KB_SERVER` for the ports 3001, 3002 nd 3003, respectively.
 
 ### 5. Prepare the Knowledge Base
-When the IVA lacks the knowledge required to give a factual response to the caller, it will ues the `askForExample` function to query the KB. The KB lives in a MongoDB database collection that must be prepared. The `kb.js` module implements an endpoint that provides all KB services. It uses three environment variables: `MONGODB_URI`, `MONGODB_DB` and `QUERY_VECTOR_COLLECTION`. To develop and test with your own database instance, you must provision MongoDB either locally or in a cloud service. The easiest and cheapest way is with the free version of the cloud service [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register).
+When the IVA lacks the knowledge required to give a factual response to the caller, it will use the `askForExample` function to query the KB. The KB lives in a MongoDB database collection that must be prepared. The `kb.js` module implements an endpoint that provides all KB services. It uses three environment variables: `MONGODB_URI`, `MONGODB_DB` and `QUERY_VECTOR_COLLECTION`. To develop and test with your own database instance, you must provision MongoDB either locally or in a cloud service. The easiest and cheapest way is with the free version of the cloud service [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register).
 
 Once you have a MongoDB cluster, create a database (e.g., named "sko25_hackathon") and use your Mongo connection URI. For MongoDB Atlas, the URI can be found by going to the 'Clusters' page and then clicking the 'Connect' button and then the 'Drivers' button. 
 
 Once you have your database created and your Mongo-related environment variables set, run the command `npm run initKB` to create the collection and build a search index.
 
-If you want to pre-load the KB with some sample query-response pairs, run the command `npm run testLoadKB`. You can change the sample queries by editing the file `test/testQueries.json`. If you want to drop the KB contents, run the `initKB` script again. NOTE: the `initKB` script normally fails with an error stating that the index already exists. This is a timing problem with cloud-level propagation of resources so wait a few seconds and then run it again. It should run fine the second time.
+If you want to pre-load the KB with some sample query-response pairs, run the command `npm run testLoadKB`. You can change the sample queries by editing the file `test/testQueries.json`. If you want to reset the KB contents, run the `initKB` script again. NOTE: the `initKB` script normally fails with an error stating that the index already exists. This is a timing problem with cloud-level propagation of resources so wait a few seconds and then run it again. It should run fine the second time.
 
 To submit test queries to the semantic search capability, run the `testKB` script like so:
 ```bash
 npm run testKB 'Do you have a store in New York?'
 ```
 
-### 6. Start Your Servers in Development Mode
-Run the following command to start the KB server:
-```bash
-npm run kb
-```
-This will start the KB app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
-
-In another terminal window, run the following command to start the IVA:
-```bash
-npm run dev
-```
-This will start the IVA (Conversation Relay) app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
-
-### 7. Configure an Incoming Phone Number
+### 6. Configure an Incoming Phone Number
 The Programmable Voice inbound event handler webhooks to your IVA server on port 3000, so you must also change the configuration for your phone number webhook URL to use your tunnel address (e.g., `https://iva-jlafer-demo.ngrok.io/incoming` or `https://abc123.ngrok.app/incoming`).
 
 You configure a phone number in the [Twilio Console](https://console.twilio.com/us1/develop/phone-numbers/manage/incoming).
@@ -110,6 +96,33 @@ twilio phone-numbers:update +1[your-twilio-number] --voice-url=https://abc123.ng
 ```
 This configuration tells Twilio to send incoming call audio to your IVA app when someone calls your number. The app responds to the incoming call webhook with a [Stream](https://www.twilio.com/docs/voice/twiml/stream) TwiML verb that will connect an audio media stream to your websocket server.
 
+### 7. Start Your Servers in Development Mode
+
+#### KB Server
+Run the following command to start the KB server:
+```bash
+npm run kb
+```
+This will start the KB app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
+
+#### IVA Application
+In another terminal window, run the following command to start the IVA:
+```bash
+npm run dev
+```
+This will start the IVA (Conversation Relay) app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
+
+#### Serverless Functions (locally executed)
+In another terminal window, change to the `serverless-cr` directory and run the following command to start the Twilio Serverless service locally:
+```bash
+twilio serverless:start
+```
+This will start the Serverless Toolkit app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
+
+### Flex
+Until we develop any Flex plugins (e.g., to display a summary of the IVA session), we can run a vanilla version of Flex, hosted in the Twilio cloud. Until then, we won't need to run Flex locally.
+
+Instead, you can run Flex at flex.twilio.com by logging in from the Twilio Console at Flex --> Overview --> Launch Flex UI --> Log in with Console. This will start the Flex UI in your default browser. Once logged in, go to the Tasks tab using the navigation bar on the left side of the page and then use the agent status dropdown at the top-right to make yourself "Available" to take calls. Once available, the IVA app can transfer calls to you (or any team member who is available) when the caller needs live assistance.
 
 ### 8. Modifying the ChatGPT Context & Prompt
 - You can tweak the prompt and some other options via Airtable, either modify your record directly, or create and use your Airtable form as below.
@@ -131,27 +144,43 @@ You can customize the bot's behavior and user experience using the following fie
 - Transcription Provider: Choose the speech-to-text provider (currently supports Google and Deepgram).
 - SPIChangeSTT: Enable dynamic language changes during a conversation when requested.
 
+### 9. Test Scripts
+A couple of testing scripts have been provided.
 
-### 9. Monitor and Logs 
-You can monitor logs at https://you-server-address/monitor
-![ConvRelay-Logs](images/convrelay-logs.png)
+#### testCompletion.js
+This script allows you to test out chat completions that you configure in a test subdirectory. It's useful for trying out different prompt engineering strategies and scripting out a conversation.
 
-## Deploying to Fly.io 
-> Deploying to Fly.io is not required to try the app, but can be helpful if your home internet speed is variable.
+The subdirectory should contain two files: `context.txt` and `userInput.txt`. See `test/rag` for an example. The context file contains contextual messages passed to the LLM on every completions request. The user input file contains the end-user side of the conversation - one prompt per line.
 
-Modify the app name `fly.toml` to be a unique value (this must be globally unique).
-
-Deploy the app using the Fly.io CLI:
+Run the following command to run the script:
 ```bash
-fly launch
-
-fly deploy
+npm run testCompletion <subdirectory name>
 ```
-Update the 'SERVER' in .env with the fly.io server you get.
 
-Import your secrets from your .env file to your deployed app:
+#### testKB.js
+This script allows you to test out KB semantic searches. It's useful for trying out different RAG lookups to see how the KB search will respond to different caller queries, given the current contents of the KB.
+
+Run the following command to run the script:
 ```bash
-fly secrets import < .env
+npm run testKB 'a sample caller request'
+```
+
+#### testLoadKB.js
+This script allows you to pre-load QA pairs into the KB. It's useful for controlling the KB contents prior to testing semantic searches with `testKB.js` or before running the IVA app.
+
+Run the following command to run the script:
+```bash
+npm run testLoadKB
+```
+
+#### testConvoToPairs.js
+This script allows you to test out conversation "chunking" that you configure in a test subdirectory. It's useful for trying out different prompt engineering strategies for creating knowledge base items from a conversation.
+
+The subdirectory should contain two files: `context.txt` and `userInput.txt`. See `test/makeQAPairs` for an example. The context file contains contextual messages passed to the LLM on the completions request. The user input file contains a sample conversation between a caller and a live agent, in a format very similar to that obtained from a Voice Intelligence transcript.
+
+Run the following command to run the script:
+```bash
+npm run testConvoToPairs <subdirectory name>
 ```
 
 ## Bonus: Creating Effective Prompts for Voice Bots
