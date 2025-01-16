@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "initKB": "node initKB.js",
+    "initProfile": "node test/initProfile.js",
     "kb": "nodemon kb.js",
     "test": "jest",
     "testLoadKB": "node test/testLoadKB.js",

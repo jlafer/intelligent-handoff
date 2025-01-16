@@ -94,7 +94,7 @@ You can also use the Twilio CLI:
 ```bash
 twilio phone-numbers:update +1[your-twilio-number] --voice-url=https://abc123.ngrok.app/incoming
 ```
-This configuration tells Twilio to send incoming call audio to your IVA app when someone calls your number. The app responds to the incoming call webhook with a [Stream](https://www.twilio.com/docs/voice/twiml/stream) TwiML verb that will connect an audio media stream to your websocket server.
+This configuration tells Twilio to send incoming call audio to your IVA app when someone calls your number. The app responds to the incoming call webhook with a [Connect](https://www.twilio.com/docs/voice/twiml/connect) TwiML verb and the [ConversationRelay](https://www.twilio.com/docs/voice/twiml/connect/conversationrelay) noun that will connect the phone call to your websocket server via events (to your app) and requests (from your app).
 
 ### 7. Start Your Servers in Development Mode
 
@@ -146,6 +146,14 @@ You can customize the bot's behavior and user experience using the following fie
 
 ### 9. Test Scripts
 A couple of testing scripts have been provided.
+
+#### initProfile.js
+This script allows you to pre-load a user profile into Segment. It's useful for populating the Segment workspace with a test user prior to running the IVA app.
+
+Run the following command to run the script:
+```bash
+npm run initProfile
+```
 
 #### testCompletion.js
 This script allows you to test out chat completions that you configure in a test subdirectory. It's useful for trying out different prompt engineering strategies and scripting out a conversation.
