@@ -152,7 +152,7 @@ This script allows you to pre-load a user profile into Segment. It's useful for 
 
 Run the following command to run the script:
 ```bash
-npm run initProfile
+npm run initProfile "Mickey Mouse" "+18005551212"
 ```
 
 #### testCompletion.js
