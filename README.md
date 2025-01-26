@@ -28,7 +28,7 @@ You should get your Twilio Account Flag (Voice - Enable Conversation Relay) enab
 If you're hosting the app locally, we also recommend using a tunneling service like [ngrok](https://ngrok.com) so that Twilio can forward audio and webhooks to your app.
 
 ### 1. Configure Environment Variables
-Copy `.env.example` to `.env` and configure the environment variables. See the `ngrok` section below for information on how to set the server and port variables.
+Copy `env.example` to `.env` and configure the environment variables. See the `ngrok` section below for information on how to set the server and port variables.
 
 ### 2. Install Dependencies with NPM
 Install the necessary packages. At the root directory of the project, run the following command.
@@ -115,7 +115,7 @@ This will start the IVA (Conversation Relay) app using `nodemon` so that any cha
 #### Serverless Functions (locally executed)
 In another terminal window, change to the `serverless-cr` directory and run the following command to start the Twilio Serverless service locally:
 ```bash
-twilio serverless:start
+twilio serverless:start 3001
 ```
 This will start the Serverless Toolkit app using `nodemon` so that any changes to your code automatically refreshes and restarts the server.
 
@@ -145,7 +145,7 @@ You can customize the bot's behavior and user experience using the following fie
 - SPIChangeSTT: Enable dynamic language changes during a conversation when requested.
 
 ### 9. Test Scripts
-A couple of testing scripts have been provided.
+A few testing scripts have been provided.
 
 #### initProfile.js
 This script allows you to pre-load a user profile into Segment. It's useful for populating the Segment workspace with a test user prior to running the IVA app.
