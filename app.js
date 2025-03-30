@@ -33,27 +33,21 @@ let gptService;
 let textService;
 let cfg;
 
-app.get('/monitor', (_req, res) => {
-  res.sendFile(__dirname + '/monitor.html');
-});
-
-app.get('/logs', (_req, res) => {
-  res.json(log.getAll());
-});
-
 app.post('/incoming', async (req, res) => {
   try {
     const { From: from } = req.body;
     log.info('incoming call; connecting to ConversationRelay');
     log.debug('call data:', req.body);
+
     cfg = await getLatestConvRelayCfgRcd();
     log.debug('cfg:', cfg);
+
     await upsertUser({ userId: from, anonymousId: null });
     const profileTraits = await getProfileTraits(from);
     cfg.profile = `The user's full name is ${profileTraits.name}`;
+
     gptService = new GptService(log, cfg.model);
     gptService.initUserContext(cfg);
-    log.info(`language : ${cfg.language}, voice : ${cfg.voice}`);
     
     const response = 
     `<Response>
@@ -82,7 +76,7 @@ app.ws('/sockets', (ws) => {
 
     let interactionCount = 0;
     
-    // handler for incoming data from MediaStreams
+    // define handler for incoming data from MediaStreams
     ws.on('message', async function message(data) {
       const msg = JSON.parse(data);
       log.debug('message:', msg);
@@ -131,19 +125,19 @@ app.ws('/sockets', (ws) => {
       }
     });
       
-    // handler for incoming text data from GPT
+    // define handler for incoming text data from GPT
     gptService.on('gptreply', (gptReply, final, icount) => {
       log.info(`Interaction ${icount}: GPT -> TTS: ${gptReply}`.green);
       log.debug(`gptreply: interaction number ${icount}: ${gptReply}`);
       textService.sendText(gptReply, final);
     });
 
-    // handler for incoming tool-call data from GPT
+    // define handler for transferToLiveAgent tool-call from GPT
     gptService.on('transferToLiveAgent', () => {
       transferToLiveAgent(textService, gptService, ws);
     });
 
-    // handler for incoming tool-call data from GPT
+    // define handler for incoming tool-call data from GPT
     gptService.on('tools', (functionName, functionArgs, functionResponse) => {
       log.info(`function ${functionName} with args ${functionArgs}`);
       log.info(`function response: ${functionResponse}`);
